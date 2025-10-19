@@ -430,10 +430,10 @@
           savingsElement.textContent = formatNumber(selectedSavings);
         }
 
-        setElement(recommendedPvElement, pvPower, { digits: 2, unit: 'kWp' });
-        setElement(recommendedStorageElement, batteryCapacity, { digits: 1, unit: 'kWh' });
+        setElement(recommendedPvElement, pvPower, { digits: 2 });
+        setElement(recommendedStorageElement, batteryCapacity, { digits: 1 });
         const paybackYears = Number.isFinite(paybackWithout) ? paybackWithout : paybackWith;
-        setElement(investmentReturnElement, paybackYears, { digits: 0, unit: 'lat' });
+        setElement(investmentReturnElement, paybackYears, { digits: 0 });
 
         shareResults(calculation, { pstrykEnabled });
       }
