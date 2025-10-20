@@ -2,6 +2,7 @@
   'use strict';
 
   const DEFAULTS = {
+    monthlyBill: 321.13,
     energyActivePrice: 0.62,
     distributionPrice: 0.48,
     resalePrice: 0.2,
@@ -64,9 +65,10 @@
     }
 
     const fieldsWithDefaults = [
-      { element: energyActivePriceInput, value: DEFAULTS.energyActivePrice, digits: 2 },
-      { element: distributionPriceInput, value: DEFAULTS.distributionPrice, digits: 2 },
-      { element: resalePriceInput, value: DEFAULTS.resalePrice, digits: 2 },
+      { element: billInput, value: DEFAULTS.monthlyBill, digits: 2 },
+      { element: energyActivePriceInput, value: DEFAULTS.energyActivePrice, digits: 3 },
+      { element: distributionPriceInput, value: DEFAULTS.distributionPrice, digits: 3 },
+      { element: resalePriceInput, value: DEFAULTS.resalePrice, digits: 3 },
       { element: fixedChargesInput, value: DEFAULTS.fixedCharges, digits: 2 },
       { element: priceGrowthInput, value: DEFAULTS.priceGrowth * 100, digits: 2 }
     ];
@@ -187,7 +189,16 @@
   function setDefaultValue(config) {
     const { element, value, digits } = config;
     if (!element || element.value) return;
+    if (element.tagName === 'INPUT' && element.type === 'number') {
+      if (!Number.isFinite(value)) return;
+      const factor = Number.isFinite(digits) ? digits : undefined;
+      const numericString = factor !== undefined ? value.toFixed(factor) : String(value);
+      element.value = numericString.replace(/\.0+$/, '').replace(/(\.[0-9]*?)0+$/, '$1');
+      if (element.dataset) element.dataset.rawValue = String(value);
+      return;
+    }
     element.value = formatNumber(value, digits);
+    if (element.dataset) element.dataset.rawValue = String(value);
   }
 
   function parseInput(raw) {
