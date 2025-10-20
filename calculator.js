@@ -56,6 +56,7 @@
     const savingsElement = document.getElementById('savings');
     const pvElement = document.getElementById('recommendation-photovoltaics');
     const batteryElement = document.getElementById('recommendation-storage');
+    const currentDemandElement = document.getElementById('currentDemand');
 
     if (!billInput || !resultBillInput) {
       console.warn('Solar calculator: required elements not found');
@@ -149,6 +150,7 @@
       setTextValue(savingsElement, selectedSavings);
       setTextValue(pvElement, pvPower, 2);
       setTextValue(batteryElement, batteryCapacity, 1);
+      setTextValue(currentDemandElement, yearlyDemand, 0);
 
       const detail = {
         results: {
@@ -178,6 +180,7 @@
       setTextValue(savingsElement, null);
       setTextValue(pvElement, null);
       setTextValue(batteryElement, null);
+      setTextValue(currentDemandElement, null);
     }
   }
 
