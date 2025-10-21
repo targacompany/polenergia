@@ -6,7 +6,7 @@
     resalePrice: 'resalePrice',
     fixedCharges: 'fixedCharges',
     priceGrowth: 'priceGrowth',
-    pstryk: 'pstryk'
+  dynamicPrice: 'dynamicPrice'
   };
 
   const INSTALLATION_TABLE = [
@@ -53,7 +53,7 @@
     moduleDegradation: 0.004,
     selectionFactor: 0.9,
     taxReliefRate: 0.32,
-    pstrykRate: 0.24
+    dynamicPriceRate: 0.24
   };
 
   const formatCurrency = (value) =>
@@ -95,7 +95,7 @@
       resalePrice: readNumber(INPUT_IDS.resalePrice),
       fixedCharges: readNumber(INPUT_IDS.fixedCharges),
       priceGrowth: readNumber(INPUT_IDS.priceGrowth),
-      pstryk: readBoolean(INPUT_IDS.pstryk)
+      dynamicPrice: readBoolean(INPUT_IDS.dynamicPrice)
     };
   }
 
@@ -160,7 +160,7 @@
       const activePrice = energyActivePrice * growthFactor;
       const currentDistributionPrice = distributionPrice * growthFactor;
       const currentResalePrice = resalePrice * growthFactor;
-      const pstrykPerKwh = activePrice * CONSTANTS.pstrykRate;
+      const dynamicPricePerKwh = activePrice * CONSTANTS.dynamicPriceRate;
 
     const degradationFactor = yearIndex === 0 ? 1 : Math.max(1 - CONSTANTS.moduleDegradation * yearNumber, 0);
     const production = baseProduction * degradationFactor;
@@ -172,7 +172,7 @@
         : previousImported + (previousExported - exported);
 
       const savingsWithout = autoconsumption * (activePrice + currentDistributionPrice) + exported * currentResalePrice;
-      const savingsWith = savingsWithout + imported * pstrykPerKwh;
+      const savingsWith = savingsWithout + imported * dynamicPricePerKwh;
 
       cumulativeWithout = yearIndex === 0
         ? -netInstallationCost + savingsWithout
@@ -196,7 +196,7 @@
         activePrice,
         distributionPrice: currentDistributionPrice,
         resalePrice: currentResalePrice,
-        pstrykPerKwh,
+        dynamicPricePerKwh,
         savingsWithout,
         savingsWith,
         cumulativeWithout,
@@ -232,7 +232,7 @@
     const firstYear = table[0] || null;
 
     const yearlyBill = firstYear
-      ? (inputs.pstryk ? firstYear.pvBillWith : firstYear.pvBillWithout)
+      ? (inputs.dynamicPrice ? firstYear.pvBillWith : firstYear.pvBillWithout)
       : baselineYearlyBill;
 
     const savings = baselineYearlyBill - yearlyBill;
@@ -273,7 +273,8 @@
   }
 
   function updateOutputs(results) {
-    setOutput('yearly-bill', results.yearlyBill, formatCurrency);
+    setOutput('yearlyBill', results.yearlyBill, formatCurrency);
+    setOutput('resultBill', results.yearlyBill / 12, formatCurrency);
     setOutput('savings', results.savings, formatCurrency);
     setOutput('recommendation-photovoltaics', results.recommendedPv, (value) => formatNumber(value, 2));
     if (results.recommendedStorage !== null) {
