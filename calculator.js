@@ -270,6 +270,7 @@
     const formatted = formatter ? formatter(value) : value;
     if ('value' in el) {
       el.value = formatted;
+      el.setAttribute('value', formatted);
     } else {
       el.textContent = formatted;
     }
@@ -280,7 +281,7 @@
     setOutput('resultBill', results.yearlyBill / 12, formatCurrency);
     setOutput('savings', results.savings, formatCurrency);
     setOutput('recommendation-photovoltaics', results.recommendedPv, (value) => formatNumber(value, 2));
-    setOutput('currentDemand', results.currentDemand, (value) => formatNumber(value, 2));
+    setOutput('currentDemand', results.currentDemand, (value) => (Number.isFinite(value) ? value.toFixed(2) : ''));
 
     if (results.recommendedStorage !== null) {
       setOutput('recommendation-storage', results.recommendedStorage, (value) => formatNumber(value, 1));
