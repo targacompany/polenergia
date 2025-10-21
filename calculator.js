@@ -265,11 +265,17 @@
       return;
     }
 
-    const formatted = formatNumber(value, digits);
-    if ('value' in element) {
-      element.value = formatted;
+    if (element.tagName === 'INPUT' && element.type === 'number') {
+      const factor = Number.isFinite(digits) ? digits : undefined;
+      const numericString = factor !== undefined ? value.toFixed(factor) : String(value);
+      element.value = numericString.replace(/\.0+$/, '').replace(/(\.[0-9]*?)0+$/, '$1');
     } else {
-      element.textContent = formatted;
+      const formatted = formatNumber(value, digits);
+      if ('value' in element) {
+        element.value = formatted;
+      } else {
+        element.textContent = formatted;
+      }
     }
     if (element.dataset) element.dataset.rawValue = String(value);
   }
