@@ -126,16 +126,94 @@
     });
   }
 
+  function initArticleMobileToggle() {
+    const toggleTrigger = document.querySelector('[article-navi="toggle-open"]');
+    if (!toggleTrigger) {
+      console.log('Article navigation toggle: trigger not found');
+      return;
+    }
+
+    const closedText = document.querySelector('[article-navi="closed-text"]');
+    const mobileToggleElement = document.querySelector('[movile-navi="toggle-element"]');
+    const mobileQuery = window.matchMedia('(max-width: 991.98px)');
+
+    let isExpanded = false;
+    let previousClosedDisplay = '';
+    let previousMobileDisplay = '';
+
+    function applyState() {
+      if (!mobileQuery.matches || !isExpanded) {
+        if (closedText) {
+          closedText.style.display = previousClosedDisplay;
+        }
+        if (mobileToggleElement) {
+          mobileToggleElement.style.display = previousMobileDisplay;
+        }
+        return;
+      }
+
+      if (closedText) {
+        previousClosedDisplay = previousClosedDisplay || closedText.style.display;
+        closedText.style.display = 'none';
+      }
+
+      if (mobileToggleElement) {
+        previousMobileDisplay = previousMobileDisplay || mobileToggleElement.style.display;
+        mobileToggleElement.style.display = 'flex';
+      }
+    }
+
+    function resetStoredDisplays() {
+      previousClosedDisplay = '';
+      previousMobileDisplay = '';
+    }
+
+    const handleToggle = () => {
+      if (!mobileQuery.matches) {
+        isExpanded = false;
+        resetStoredDisplays();
+        applyState();
+        return;
+      }
+
+      isExpanded = !isExpanded;
+      applyState();
+    };
+
+    toggleTrigger.addEventListener('click', handleToggle);
+
+    const handleBreakpointChange = event => {
+      if (!event.matches) {
+        isExpanded = false;
+        resetStoredDisplays();
+      }
+      applyState();
+    };
+
+    if (typeof mobileQuery.addEventListener === 'function') {
+      mobileQuery.addEventListener('change', handleBreakpointChange);
+    } else if (typeof mobileQuery.addListener === 'function') {
+      mobileQuery.addListener(handleBreakpointChange);
+    }
+
+    applyState();
+  }
+
+  function initArticleFeatures() {
+    generateArticleNavigation();
+    initArticleMobileToggle();
+  }
+
   // Initialize when DOM is ready
   console.log('Article Navigation Script Loaded');
   console.log('Document ready state:', document.readyState);
   
   if (document.readyState === 'loading') {
     console.log('Waiting for DOMContentLoaded...');
-    document.addEventListener('DOMContentLoaded', generateArticleNavigation);
+    document.addEventListener('DOMContentLoaded', initArticleFeatures);
   } else {
     console.log('DOM already loaded, running immediately');
-    generateArticleNavigation();
+    initArticleFeatures();
   }
 
   // Optional: Re-generate navigation if content changes
