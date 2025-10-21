@@ -1,6 +1,5 @@
   const INPUT_IDS = {
     billInput: 'billInput',
-    currentDemand: 'currentDemand',
     energyActivePrice: 'energyActivePrice',
     distributionPrice: 'distributionPrice',
     resalePrice: 'resalePrice',
@@ -89,7 +88,6 @@
   function readInputs() {
     return {
       billInput: readNumber(INPUT_IDS.billInput),
-      currentDemand: readNumber(INPUT_IDS.currentDemand),
       energyActivePrice: readNumber(INPUT_IDS.energyActivePrice),
       distributionPrice: readNumber(INPUT_IDS.distributionPrice),
       resalePrice: readNumber(INPUT_IDS.resalePrice),
@@ -131,7 +129,6 @@
     const rows = [];
     const {
       billInput,
-      currentDemand,
       energyActivePrice,
       distributionPrice,
       resalePrice,
@@ -140,7 +137,8 @@
 
     const {
       baseProduction,
-      netInstallationCost
+      netInstallationCost,
+      currentDemand
     } = derived;
 
     const growth = 1 + priceGrowth;
@@ -213,10 +211,14 @@
   }
 
   function computeResults(inputs) {
+    const monthlyUsageCost = Math.max(inputs.billInput - inputs.fixedCharges, 0);
+    const variableRate = inputs.energyActivePrice + inputs.distributionPrice;
+    const currentDemand = variableRate > 0 ? (monthlyUsageCost / variableRate) * 12 : 0;
+
     const baselineYearlyBill = inputs.billInput * 12;
     const recommendedPv = Math.max(
       CONSTANTS.minPvKw,
-      mround((inputs.currentDemand * CONSTANTS.selectionFactor) / 1000, CONSTANTS.pvStep)
+      mround((currentDemand * CONSTANTS.selectionFactor) / 1000, CONSTANTS.pvStep)
     );
 
     const baseProduction = recommendedPv * 1000 * CONSTANTS.pvLossFactor * CONSTANTS.productionFactor;
@@ -228,7 +230,7 @@
 
     const storage = pickStorage(recommendedPv);
 
-    const table = buildProfitabilityTable(inputs, { baseProduction, netInstallationCost });
+    const table = buildProfitabilityTable(inputs, { baseProduction, netInstallationCost, currentDemand });
     const firstYear = table[0] || null;
 
     const yearlyBill = firstYear
@@ -246,6 +248,7 @@
     }
 
     return {
+      currentDemand,
       baselineYearlyBill,
       yearlyBill,
       savings,
