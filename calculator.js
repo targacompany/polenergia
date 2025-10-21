@@ -87,8 +87,8 @@
     inputs.forEach((input) => input.addEventListener('input', update));
 
     if (pstrykToggle) {
-      const eventName = pstrykToggle.type === 'checkbox' || pstrykToggle.type === 'radio' ? 'change' : 'input';
-      pstrykToggle.addEventListener(eventName, update);
+      pstrykToggle.addEventListener('change', update);
+      pstrykToggle.addEventListener('input', update);
     }
 
     update();
