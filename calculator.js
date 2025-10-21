@@ -280,6 +280,8 @@
     setOutput('resultBill', results.yearlyBill / 12, formatCurrency);
     setOutput('savings', results.savings, formatCurrency);
     setOutput('recommendation-photovoltaics', results.recommendedPv, (value) => formatNumber(value, 2));
+    setOutput('currentDemand', results.currentDemand, (value) => formatNumber(value, 2));
+
     if (results.recommendedStorage !== null) {
       setOutput('recommendation-storage', results.recommendedStorage, (value) => formatNumber(value, 1));
     }
