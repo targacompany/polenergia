@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Helper function: read current values ---
   function computeChartData(detail) {
     const billInputEl = document.getElementById('billInput');
-    const yearlyBillEl = document.getElementById('yearly-bill');
+    const yearlyBillEl = document.getElementById('yearlyBill');
 
     const monthlyBill = parseFloat(billInputEl?.value || 0);
     const yearlyFromInput = monthlyBill * 12;
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const billInput = document.getElementById('billInput');
-  const yearlyBillEl = document.getElementById('yearly-bill');
+  const yearlyBillEl = document.getElementById('yearlyBill');
 
   if (billInput) billInput.addEventListener('input', () => updateChart());
 
