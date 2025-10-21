@@ -46,19 +46,19 @@
   function init() {
     const billInput = document.getElementById('billInput');
     const resultBillInput = document.getElementById('resultBill');
-    const energyActivePriceInput = document.getElementById('energyActivePrice');
-    const distributionPriceInput = document.getElementById('distributionPrice');
-    const resalePriceInput = document.getElementById('resalePrice');
-    const fixedChargesInput = document.getElementById('fixedCharges');
-    const priceGrowthInput = document.getElementById('priceGrowth');
+    const energyActivePriceInput = document.getElementById('energyActivePrice') || document.querySelector('[data-calc="energy-active-price"]');
+    const distributionPriceInput = document.getElementById('distributionPrice') || document.querySelector('[data-calc="distribution-price"]');
+    const resalePriceInput = document.getElementById('resalePrice') || document.querySelector('[data-calc="resale-price"]');
+    const fixedChargesInput = document.getElementById('fixedCharges') || document.querySelector('[data-calc="fixed-charges"]');
+    const priceGrowthInput = document.getElementById('priceGrowth') || document.querySelector('[data-calc="price-growth"]');
     const pstrykToggle = document.querySelector('[data-calc="pstryk"]');
 
-    const yearlyBillElement = document.getElementById('yearly-bill');
-    const savingsElement = document.getElementById('savings');
-    const pvElement = document.getElementById('recommendation-photovoltaics');
-    const batteryElement = document.getElementById('recommendation-storage');
-    const currentDemandElement = document.getElementById('currentDemand');
-    const yearlyBillDisplayElement = document.getElementById('yearlyBillDisplay');
+    const yearlyBillElement = document.getElementById('yearly-bill') || document.querySelector('[data-calc="yearly-bill"]');
+    const savingsElement = document.getElementById('savings') || document.querySelector('[data-calc="savings"]');
+    const pvElement = document.getElementById('recommendation-photovoltaics') || document.querySelector('[data-calc="recommendation-photovoltaics"]');
+    const batteryElement = document.getElementById('recommendation-storage') || document.querySelector('[data-calc="recommendation-storage"]');
+    const currentDemandElement = document.getElementById('currentDemand') || document.querySelector('[data-calc="current-demand"]');
+    const yearlyBillDisplayElement = document.getElementById('yearlyBillDisplay') || document.querySelector('[data-calc="yearly-bill-display"]');
 
     if (!billInput || !resultBillInput) {
       console.warn('Solar calculator: required elements not found');
