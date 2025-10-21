@@ -1,310 +1,330 @@
-(function () {
-  'use strict';
-
-  const DEFAULTS = {
-    monthlyBill: 321.13,
-    energyActivePrice: 0.62,
-    distributionPrice: 0.48,
-    resalePrice: 0.2,
-    fixedCharges: 20,
-    priceGrowth: 0.05,
-    powerSelectionCoefficient: 0.9,
-    productionCoefficient: 1.02,
-    systemLossFactor: 0.99,
-    selfConsumptionLevel: 0.7,
-    pstrykRate: 0.24,
-    minPvPower: 2.7,
-    powerStep: 0.45
+  const INPUT_IDS = {
+    billInput: 'billInput',
+    currentDemand: 'currentDemand',
+    energyActivePrice: 'energyActivePrice',
+    distributionPrice: 'distributionPrice',
+    resalePrice: 'resalePrice',
+    fixedCharges: 'fixedCharges',
+    priceGrowth: 'priceGrowth',
+    pstryk: 'pstryk'
   };
 
-  const POWER_COST_TABLE = [
-    { power: 2.7, cost: 42990, battery: 5.8 },
-    { power: 3.15, cost: 45980, battery: 6.1 },
-    { power: 3.6, cost: 47980, battery: 6.1 },
-    { power: 4.05, cost: 49980, battery: 6.1 },
-    { power: 4.5, cost: 52230, battery: 6.1 },
-    { power: 4.95, cost: 54480, battery: 6.1 },
-    { power: 5.4, cost: 56730, battery: 6.1 },
-    { power: 5.85, cost: 58980, battery: 6.1 },
-    { power: 6.3, cost: 59980, battery: 6.1 },
-    { power: 6.75, cost: 60980, battery: 6.1 },
-    { power: 7.2, cost: 61980, battery: 6.1 },
-    { power: 7.65, cost: 62980, battery: 6.1 },
-    { power: 8.1, cost: 63980, battery: 6.1 },
-    { power: 8.55, cost: 64980, battery: 6.1 },
-    { power: 9, cost: 65980, battery: 6.1 },
-    { power: 9.45, cost: 66480, battery: 6.1 },
-    { power: 9.9, cost: 66980, battery: 6.1 }
+  const INSTALLATION_TABLE = [
+    { pvKw: 2.7, price: 42990, storageKwh: 5.8 },
+    { pvKw: 3.15, price: 45980, storageKwh: 9.2 },
+    { pvKw: 3.6, price: 47980, storageKwh: 9.2 },
+    { pvKw: 4.05, price: 49980, storageKwh: 9.2 },
+    { pvKw: 4.5, price: 52230, storageKwh: 9.2 },
+    { pvKw: 4.95, price: 54480, storageKwh: 9.2 },
+    { pvKw: 5.4, price: 56730, storageKwh: 9.2 },
+    { pvKw: 5.85, price: 58980, storageKwh: 9.2 },
+    { pvKw: 6.3, price: 59980, storageKwh: 9.2 },
+    { pvKw: 6.75, price: 60980, storageKwh: 9.2 },
+    { pvKw: 7.2, price: 61980, storageKwh: 9.2 },
+    { pvKw: 7.65, price: 62980, storageKwh: 9.2 },
+    { pvKw: 8.1, price: 63980, storageKwh: 9.2 },
+    { pvKw: 8.55, price: 64980, storageKwh: 9.2 },
+    { pvKw: 9.0, price: 65980, storageKwh: 9.2 },
+    { pvKw: 9.45, price: 66480, storageKwh: 9.2 },
+    { pvKw: 9.9, price: 66980, storageKwh: 9.2 }
   ];
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  const STORAGE_TABLE = [
+    { storageKwh: 6.1, pvMatchKw: 4.066666667 },
+    { storageKwh: 9.2, pvMatchKw: 6.133333333 },
+    { storageKwh: 12.2, pvMatchKw: 8.133333333 },
+    { storageKwh: 18.4, pvMatchKw: 12.26666667 },
+    { storageKwh: 24.4, pvMatchKw: 16.26666667 },
+    { storageKwh: 11.5, pvMatchKw: 7.666666667 },
+    { storageKwh: 17.3, pvMatchKw: 11.53333333 },
+    { storageKwh: 23.0, pvMatchKw: 15.33333333 },
+    { storageKwh: 34.6, pvMatchKw: 23.06666667 },
+    { storageKwh: 46.1, pvMatchKw: 30.73333333 }
+  ];
+
+  const CONSTANTS = {
+    minPvKw: 2.7,
+    pvStep: 0.45,
+    pvLossFactor: 0.99,
+    years: 25,
+    grantAmount: 23000,
+    productionFactor: 1.02,
+    autoconsumptionRate: 0.7,
+    moduleDegradation: 0.004,
+    selectionFactor: 0.9,
+    taxReliefRate: 0.32,
+    pstrykRate: 0.24
+  };
+
+  const formatCurrency = (value) =>
+    typeof value === 'number'
+      ? value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '';
+
+  const formatNumber = (value, fractionDigits = 2) =>
+    typeof value === 'number'
+      ? value.toLocaleString('pl-PL', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits })
+      : '';
+
+  function readNumber(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    const value = el.value ?? el.textContent;
+    const parsed = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function init() {
-    const billInput = document.getElementById('billInput');
-    const resultBillInput = document.getElementById('resultBill');
-    const energyActivePriceInput = document.getElementById('energyActivePrice') || document.querySelector('[data-calc="energy-active-price"]');
-    const distributionPriceInput = document.getElementById('distributionPrice') || document.querySelector('[data-calc="distribution-price"]');
-    const resalePriceInput = document.getElementById('resalePrice') || document.querySelector('[data-calc="resale-price"]');
-    const fixedChargesInput = document.getElementById('fixedCharges') || document.querySelector('[data-calc="fixed-charges"]');
-    const priceGrowthInput = document.getElementById('priceGrowth') || document.querySelector('[data-calc="price-growth"]');
-    const pstrykToggle = document.querySelector('[data-calc="pstryk"]');
-
-    const yearlyBillElement = document.getElementById('yearly-bill') || document.querySelector('[data-calc="yearly-bill"]');
-    const savingsElement = document.getElementById('savings') || document.querySelector('[data-calc="savings"]');
-    const pvElement = document.getElementById('recommendation-photovoltaics') || document.querySelector('[data-calc="recommendation-photovoltaics"]');
-    const batteryElement = document.getElementById('recommendation-storage') || document.querySelector('[data-calc="recommendation-storage"]');
-    const currentDemandElement = document.getElementById('currentDemand') || document.querySelector('[data-calc="current-demand"]');
-    const yearlyBillDisplayElement = document.getElementById('yearlyBillDisplay') || document.querySelector('[data-calc="yearly-bill-display"]');
-
-    if (!billInput || !resultBillInput) {
-      console.warn('Solar calculator: required elements not found');
-      return;
+  function readBoolean(id) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if ('checked' in el) return Boolean(el.checked);
+    const value = el.value ?? el.textContent;
+    if (typeof value === 'string') {
+      const lowered = value.trim().toLowerCase();
+      return lowered === 'true' || lowered === '1' || lowered === 'yes';
     }
+    return Boolean(value);
+  }
 
-    const fieldsWithDefaults = [
-      { element: billInput, value: DEFAULTS.monthlyBill, digits: 2 },
-      { element: energyActivePriceInput, value: DEFAULTS.energyActivePrice, digits: 3 },
-      { element: distributionPriceInput, value: DEFAULTS.distributionPrice, digits: 3 },
-      { element: resalePriceInput, value: DEFAULTS.resalePrice, digits: 3 },
-      { element: fixedChargesInput, value: DEFAULTS.fixedCharges, digits: 2 },
-      { element: priceGrowthInput, value: DEFAULTS.priceGrowth * 100, digits: 2 }
-    ];
+  function readInputs() {
+    return {
+      billInput: readNumber(INPUT_IDS.billInput),
+      currentDemand: readNumber(INPUT_IDS.currentDemand),
+      energyActivePrice: readNumber(INPUT_IDS.energyActivePrice),
+      distributionPrice: readNumber(INPUT_IDS.distributionPrice),
+      resalePrice: readNumber(INPUT_IDS.resalePrice),
+      fixedCharges: readNumber(INPUT_IDS.fixedCharges),
+      priceGrowth: readNumber(INPUT_IDS.priceGrowth),
+      pstryk: readBoolean(INPUT_IDS.pstryk)
+    };
+  }
 
-    fieldsWithDefaults.forEach(setDefaultValue);
+  const mround = (value, multiple) => {
+    if (!multiple) return value;
+    return Math.round(value / multiple) * multiple;
+  };
 
-    const inputs = [
+  function pickInstallation(pvKw) {
+    if (!INSTALLATION_TABLE.length) {
+      return { pvKw: CONSTANTS.minPvKw, price: 0, storageKwh: null };
+    }
+    const entry = INSTALLATION_TABLE.find((row) => pvKw <= row.pvKw) || INSTALLATION_TABLE[INSTALLATION_TABLE.length - 1];
+    return entry;
+  }
+
+  function pickStorage(pvKw) {
+    if (!STORAGE_TABLE.length) return null;
+    let best = STORAGE_TABLE[0];
+    let bestDistance = Math.abs(best.pvMatchKw - pvKw);
+    for (let i = 1; i < STORAGE_TABLE.length; i += 1) {
+      const candidate = STORAGE_TABLE[i];
+      const distance = Math.abs(candidate.pvMatchKw - pvKw);
+      if (distance < bestDistance) {
+        best = candidate;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function buildProfitabilityTable(inputs, derived) {
+    const rows = [];
+    const {
       billInput,
-      energyActivePriceInput,
-      distributionPriceInput,
-      resalePriceInput,
-      fixedChargesInput,
-      priceGrowthInput
-    ].filter(Boolean);
+      currentDemand,
+      energyActivePrice,
+      distributionPrice,
+      resalePrice,
+      priceGrowth
+    } = inputs;
 
-    inputs.forEach((input) => input.addEventListener('input', update));
+    const {
+      baseProduction,
+      netInstallationCost
+    } = derived;
 
-    if (pstrykToggle) {
-      pstrykToggle.addEventListener('change', update);
-      pstrykToggle.addEventListener('input', update);
+    const growth = 1 + priceGrowth;
+
+    let previousExported = 0;
+    let previousImported = 0;
+    let cumulativeWithout = 0;
+    let cumulativeWith = 0;
+
+    for (let yearIndex = 0; yearIndex < CONSTANTS.years; yearIndex += 1) {
+      const yearNumber = yearIndex + 1;
+      const growthFactor = Math.pow(growth, yearIndex);
+
+      const monthlyBill = billInput * growthFactor;
+      const yearlyBill = monthlyBill * 12;
+
+      const activePrice = energyActivePrice * growthFactor;
+      const currentDistributionPrice = distributionPrice * growthFactor;
+      const currentResalePrice = resalePrice * growthFactor;
+      const pstrykPerKwh = activePrice * CONSTANTS.pstrykRate;
+
+    const degradationFactor = yearIndex === 0 ? 1 : Math.max(1 - CONSTANTS.moduleDegradation * yearNumber, 0);
+    const production = baseProduction * degradationFactor;
+      const autoconsumption = production * CONSTANTS.autoconsumptionRate;
+      const exported = production - autoconsumption;
+
+      const imported = yearIndex === 0
+        ? currentDemand - autoconsumption
+        : previousImported + (previousExported - exported);
+
+      const savingsWithout = autoconsumption * (activePrice + currentDistributionPrice) + exported * currentResalePrice;
+      const savingsWith = savingsWithout + imported * pstrykPerKwh;
+
+      cumulativeWithout = yearIndex === 0
+        ? -netInstallationCost + savingsWithout
+        : cumulativeWithout + savingsWithout;
+
+      cumulativeWith = yearIndex === 0
+        ? -netInstallationCost + savingsWith
+        : cumulativeWith + savingsWith;
+
+      const pvBillWithout = yearlyBill - savingsWithout;
+      const pvBillWith = yearlyBill - savingsWith;
+
+      rows.push({
+        year: yearNumber,
+        monthlyBill,
+        yearlyBill,
+        production,
+        autoconsumption,
+        exported,
+        imported,
+        activePrice,
+        distributionPrice: currentDistributionPrice,
+        resalePrice: currentResalePrice,
+        pstrykPerKwh,
+        savingsWithout,
+        savingsWith,
+        cumulativeWithout,
+        cumulativeWith,
+        pvBillWithout,
+        pvBillWith
+      });
+
+      previousExported = exported;
+      previousImported = imported;
     }
 
-    update();
-
-    function update() {
-      const monthlyBill = parseInput(billInput.value);
-      const pstrykEnabled = isPstrykEnabled(pstrykToggle);
-
-      if (!Number.isFinite(monthlyBill) || monthlyBill <= 0) {
-        clearOutputs();
-        shareResults({ results: null, meta: { pstrykEnabled } });
-        return;
-      }
-
-      const config = {
-        energyActivePrice: readNumber(energyActivePriceInput, DEFAULTS.energyActivePrice),
-        distributionPrice: readNumber(distributionPriceInput, DEFAULTS.distributionPrice),
-        resalePrice: readNumber(resalePriceInput, DEFAULTS.resalePrice),
-        fixedCharges: readNumber(fixedChargesInput, DEFAULTS.fixedCharges),
-        priceGrowth: readPercent(priceGrowthInput, DEFAULTS.priceGrowth)
-      };
-
-      const totalEnergyRate = config.energyActivePrice + config.distributionPrice;
-      if (!Number.isFinite(totalEnergyRate) || totalEnergyRate <= 0) {
-        clearOutputs();
-        shareResults({ results: null, meta: { pstrykEnabled } });
-        return;
-      }
-
-      const billExFixed = Math.max(monthlyBill - config.fixedCharges, 0);
-      const yearlyDemand = Math.max((billExFixed / totalEnergyRate) * 12, 0);
-
-      const basePowerKw = (yearlyDemand * DEFAULTS.powerSelectionCoefficient) / 1000;
-      const pvPower = Math.max(roundToStep(basePowerKw, DEFAULTS.powerStep), DEFAULTS.minPvPower);
-
-      const costEntry = findCostEntry(pvPower);
-      const installationCost = costEntry ? costEntry.cost : null;
-      const batteryCapacity = costEntry ? costEntry.battery : null;
-
-      const yearlyBillBefore = monthlyBill * 12;
-      const productionBase = pvPower * 1000 * DEFAULTS.systemLossFactor * DEFAULTS.productionCoefficient;
-      const selfConsumed = productionBase * DEFAULTS.selfConsumptionLevel;
-      const exported = Math.max(productionBase - selfConsumed, 0);
-      const gridEnergy = Math.max(yearlyDemand - selfConsumed, 0);
-
-      const savingsWithout = selfConsumed * totalEnergyRate + exported * config.resalePrice;
-      const extraPstryk = gridEnergy * DEFAULTS.pstrykRate * config.energyActivePrice;
-      const savingsWith = savingsWithout + extraPstryk;
-
-      const yearlyBillWithout = Math.max(yearlyBillBefore - savingsWithout, 0);
-      const yearlyBillWith = Math.max(yearlyBillBefore - savingsWith, 0);
-
-      const monthlyAfterWithout = yearlyBillWithout / 12;
-      const monthlyAfterWith = yearlyBillWith / 12;
-      const selectedMonthly = pstrykEnabled ? monthlyAfterWith : monthlyAfterWithout;
-      const selectedYearly = pstrykEnabled ? yearlyBillWith : yearlyBillWithout;
-      const selectedSavings = pstrykEnabled ? savingsWith : savingsWithout;
-
-      setResultValue(resultBillInput, selectedMonthly);
-      setTextValue(yearlyBillElement, selectedYearly);
-      setTextValue(yearlyBillDisplayElement, selectedMonthly * 12);
-      setTextValue(savingsElement, selectedSavings);
-      setTextValue(pvElement, pvPower, 2);
-      setTextValue(batteryElement, batteryCapacity, 1);
-      setTextValue(currentDemandElement, yearlyDemand, 0);
-
-      const detail = {
-        results: {
-          monthlyBill,
-          yearlyDemand,
-          pvPower,
-          installationCost,
-          batteryCapacity,
-          firstYear: {
-            pvBillWithout: yearlyBillWithout,
-            pvBillWith: yearlyBillWith,
-            savingsWithoutPstryk: savingsWithout,
-            savingsWithPstryk: savingsWith
-          }
-        },
-        meta: {
-          pstrykEnabled
-        }
-      };
-
-      shareResults(detail);
-    }
-
-    function clearOutputs() {
-      setResultValue(resultBillInput, null);
-      setTextValue(yearlyBillElement, null);
-      setTextValue(yearlyBillDisplayElement, null);
-      setTextValue(savingsElement, null);
-      setTextValue(pvElement, null);
-      setTextValue(batteryElement, null);
-      setTextValue(currentDemandElement, null);
-    }
+    return rows;
   }
 
-  function setDefaultValue(config) {
-    const { element, value, digits } = config;
-    if (!element || element.value) return;
-    if (element.tagName === 'INPUT' && element.type === 'number') {
-      if (!Number.isFinite(value)) return;
-      const factor = Number.isFinite(digits) ? digits : undefined;
-      const numericString = factor !== undefined ? value.toFixed(factor) : String(value);
-      element.value = numericString.replace(/\.0+$/, '').replace(/(\.[0-9]*?)0+$/, '$1');
-      if (element.dataset) element.dataset.rawValue = String(value);
-      return;
-    }
-    element.value = formatNumber(value, digits);
-    if (element.dataset) element.dataset.rawValue = String(value);
-  }
+  function computeResults(inputs) {
+    const baselineYearlyBill = inputs.billInput * 12;
+    const recommendedPv = Math.max(
+      CONSTANTS.minPvKw,
+      mround((inputs.currentDemand * CONSTANTS.selectionFactor) / 1000, CONSTANTS.pvStep)
+    );
 
-  function parseInput(raw) {
-    if (typeof raw !== 'string') {
-      const numeric = Number(raw);
-      return Number.isFinite(numeric) ? numeric : NaN;
-    }
-    const normalized = raw.replace(/\s+/g, '').replace(',', '.');
-    const parsed = parseFloat(normalized);
-    return Number.isNaN(parsed) ? NaN : parsed;
-  }
+    const baseProduction = recommendedPv * 1000 * CONSTANTS.pvLossFactor * CONSTANTS.productionFactor;
 
-  function readNumber(input, fallback) {
-    if (!input) return fallback;
-    const parsed = parseInput(input.value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
+    const installation = pickInstallation(recommendedPv);
+    const installationCost = installation.price || 0;
+    const installationCostWithGrant = Math.max(installationCost - CONSTANTS.grantAmount, 0);
+    const netInstallationCost = installationCostWithGrant * (1 - CONSTANTS.taxReliefRate);
 
-  function readPercent(input, fallback) {
-    const value = readNumber(input, fallback);
-    if (!Number.isFinite(value)) return fallback;
-    return value > 1 ? value / 100 : value;
-  }
+    const storage = pickStorage(recommendedPv);
 
-  function roundToStep(value, step) {
-    if (!Number.isFinite(value) || !step) return value;
-    return Math.round(value / step) * step;
-  }
+    const table = buildProfitabilityTable(inputs, { baseProduction, netInstallationCost });
+    const firstYear = table[0] || null;
 
-  function findCostEntry(power) {
-    if (!Number.isFinite(power) || POWER_COST_TABLE.length === 0) {
-      return null;
-    }
+    const yearlyBill = firstYear
+      ? (inputs.pstryk ? firstYear.pvBillWith : firstYear.pvBillWithout)
+      : baselineYearlyBill;
 
-    for (let i = 0; i < POWER_COST_TABLE.length; i += 1) {
-      if (power <= POWER_COST_TABLE[i].power + 1e-9) {
-        return POWER_COST_TABLE[i];
+    const savings = baselineYearlyBill - yearlyBill;
+
+    let paybackYear = null;
+    for (let i = 0; i < table.length; i += 1) {
+      if (table[i].cumulativeWith >= 0) {
+        paybackYear = table[i].year;
+        break;
       }
     }
 
-    return POWER_COST_TABLE[POWER_COST_TABLE.length - 1];
+    return {
+      baselineYearlyBill,
+      yearlyBill,
+      savings,
+      recommendedPv,
+      recommendedStorage: storage ? storage.storageKwh : null,
+      installationCost,
+      installationCostWithGrant,
+      netInstallationCost,
+      baseProduction,
+      table,
+      firstYear,
+      paybackYear
+    };
   }
 
-  function setResultValue(input, value) {
-    if (!input) return;
-    if (!Number.isFinite(value)) {
-      input.value = '';
-      if (input.dataset) input.dataset.rawValue = '';
-      return;
-    }
-    input.value = formatNumber(value, 2);
-    if (input.dataset) input.dataset.rawValue = String(value);
-  }
-
-  function setTextValue(element, value, digits = 2) {
-    if (!element) return;
-    if (!Number.isFinite(value)) {
-      if ('value' in element) {
-        element.value = '';
-      } else {
-        element.textContent = '';
-      }
-      if (element.dataset) element.dataset.rawValue = '';
-      return;
-    }
-
-    if (element.tagName === 'INPUT' && element.type === 'number') {
-      const factor = Number.isFinite(digits) ? digits : undefined;
-      const numericString = factor !== undefined ? value.toFixed(factor) : String(value);
-      element.value = numericString.replace(/\.0+$/, '').replace(/(\.[0-9]*?)0+$/, '$1');
+  function setOutput(id, value, formatter = null) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const formatted = formatter ? formatter(value) : value;
+    if ('value' in el) {
+      el.value = formatted;
     } else {
-      const formatted = formatNumber(value, digits);
-      if ('value' in element) {
-        element.value = formatted;
-      } else {
-        element.textContent = formatted;
-      }
+      el.textContent = formatted;
     }
-    if (element.dataset) element.dataset.rawValue = String(value);
   }
 
-  function formatNumber(value, digits = 2) {
-    if (!Number.isFinite(value)) return '';
-    return value.toLocaleString('pl-PL', {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits
+  function updateOutputs(results) {
+    setOutput('yearly-bill', results.yearlyBill, formatCurrency);
+    setOutput('savings', results.savings, formatCurrency);
+    setOutput('recommendation-photovoltaics', results.recommendedPv, (value) => formatNumber(value, 2));
+    if (results.recommendedStorage !== null) {
+      setOutput('recommendation-storage', results.recommendedStorage, (value) => formatNumber(value, 1));
+    }
+    if (results.paybackYear !== null) {
+      setOutput('investment-return', results.paybackYear, (value) => formatNumber(value, 0));
+    }
+  }
+
+  function dispatchResults(inputs, results) {
+    const detail = {
+      inputs,
+      results: {
+        yearlyBill: results.yearlyBill,
+        savings: results.savings,
+        recommendedPv: results.recommendedPv,
+        recommendedStorage: results.recommendedStorage,
+        baseProduction: results.baseProduction,
+        installationCost: results.installationCost,
+        installationCostWithGrant: results.installationCostWithGrant,
+        netInstallationCost: results.netInstallationCost,
+        paybackYear: results.paybackYear,
+        firstYear: results.firstYear,
+        table: results.table
+      }
+    };
+
+    window.polenergiaCalculator = detail;
+    document.dispatchEvent(new CustomEvent('polenergia:calculator:update', { detail }));
+  }
+
+  function recalculate() {
+    const inputs = readInputs();
+    const results = computeResults(inputs);
+    updateOutputs(results);
+    dispatchResults(inputs, results);
+  }
+
+  function attachListeners() {
+    Object.values(INPUT_IDS).forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const handler = () => recalculate();
+      el.addEventListener('change', handler);
+      el.addEventListener('input', handler);
     });
   }
 
-  function isPstrykEnabled(toggle) {
-    if (!toggle) return false;
-    if (toggle.type === 'checkbox' || toggle.type === 'radio') {
-      return Boolean(toggle.checked);
-    }
-    return Boolean(parseInput(toggle.value));
-  }
+  attachListeners();
+  recalculate();
 
-  function shareResults(detail) {
-    try {
-      window.polenergiaCalculator = detail;
-      document.dispatchEvent(new CustomEvent('polenergia:calculator:update', { detail }));
-    } catch (error) {
-      console.warn('Solar calculator: unable to share results', error);
-    }
-  }
-})();
+  window.polenergiaRecalculate = recalculate;
+
