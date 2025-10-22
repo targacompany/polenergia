@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Preserve existing styles, only add necessary layout properties
     Object.assign(counter.style, {
       display: "flex",
-      gap: "6px",
+      gap: "4px",
       overflow: "hidden",
       lineHeight: originalLineHeight !== "normal" ? originalLineHeight : "1em"
     });
