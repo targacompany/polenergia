@@ -139,22 +139,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Helper function: read current values ---
-  function computeChartData(detail) {
+  function parseNumber(value) {
+    if (value == null) return NaN;
+    if (typeof value === 'number') return value;
+    if (typeof value !== 'string') return Number(value);
+    return parseFloat(value.replace(/\s+/g, '').replace(',', '.'));
+  }
+
+  function computeChartData() {
     const billInputEl = document.getElementById('billInput');
     const yearlyBillEl = document.getElementById('yearlyBill');
 
     const monthlyBill = parseFloat(billInputEl?.value || 0);
     const yearlyFromInput = monthlyBill * 12;
 
-    const yearlyBillFromDom = parseFloat(yearlyBillEl?.textContent || yearlyBillEl?.value || 0);
-    const yearlyBillFromEvent = detail?.results?.firstYear?.pvBillWith;
-    const yearlyBill = Number.isFinite(yearlyBillFromEvent) ? yearlyBillFromEvent : yearlyBillFromDom;
+    const rawYearlyBill = yearlyBillEl?.dataset?.rawValue ?? yearlyBillEl?.value ?? yearlyBillEl?.textContent ?? 0;
+    const yearlyBillParsed = parseNumber(rawYearlyBill);
+    const yearlyBill = Number.isFinite(yearlyBillParsed) ? yearlyBillParsed : 0;
 
     return { yearlyFromInput, yearlyBill };
   }
 
-  function updateChart(detail) {
-    const { yearlyFromInput, yearlyBill } = computeChartData(detail);
+  function updateChart() {
+    const { yearlyFromInput, yearlyBill } = computeChartData();
     myChart.data.datasets[0].data = [yearlyFromInput, yearlyBill];
     if (chartEnabled) {
       myChart.update();
@@ -172,12 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let chartEnabled = false;
-  let lastDetail = window.polenergiaCalculator;
   let firstActivation = true;
 
   document.addEventListener('polenergia:calculator:update', (event) => {
-    if (event.detail) lastDetail = event.detail;
-    updateChart(lastDetail);
+    if (event.detail) {
+      const yearlyBillEl = document.getElementById('yearlyBill');
+      if (yearlyBillEl && event.detail.results?.firstYear?.pvBillWith != null) {
+        yearlyBillEl.dataset.rawValue = String(event.detail.results.firstYear.pvBillWith);
+      }
+    }
+    updateChart();
   });
 
   document.addEventListener('polenergia:calculator:advanced', (event) => {
@@ -187,9 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         firstActivation = false;
         myChart.data.datasets[0].data = [0, 0];
         myChart.update('none');
-        setTimeout(() => updateChart(lastDetail), 1000);
+        setTimeout(() => updateChart(), 1000);
       } else {
-        updateChart(lastDetail);
+        updateChart();
       }
     } else {
       myChart.data.datasets[0].data = [0, 0];

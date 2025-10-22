@@ -74,13 +74,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // Handle "next-data" inside advanced options
     advancedOptions.forEach(option => {
       const nextButton = option.querySelector('[data-calc="next-data"]');
-      const prevButton = option.querySelector('[data-button="previous-step"]');
       if (nextButton) {
         nextButton.addEventListener("click", () => {
           hideElements(advancedOptions);
           showElements(advancedSecond);
         });
       }
+    });
+
+    advancedSecond.forEach(step => {
+      const prevButton = step.querySelector('[data-button="previous-step"]');
       if (prevButton) {
         prevButton.addEventListener("click", () => {
           hideElements(advancedSecond);
