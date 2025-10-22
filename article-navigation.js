@@ -134,7 +134,7 @@
     }
 
     const closedText = document.querySelector('[article-navi="closed-text"]');
-    const mobileToggleElement = document.querySelector('[movile-navi="toggle-element"]');
+    const mobileToggleElement = document.querySelector('[mobile-navi="toggle-element"]');
     const mobileQuery = window.matchMedia('(max-width: 991.98px)');
 
     let isExpanded = false;
