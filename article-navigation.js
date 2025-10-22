@@ -138,40 +138,39 @@
     const mobileQuery = window.matchMedia('(max-width: 991.98px)');
 
     let isExpanded = false;
-    let previousClosedDisplay = '';
-    let previousMobileDisplay = '';
+    const closedDefaultDisplay = closedText ? getComputedStyle(closedText).display : '';
+    const mobileDefaultDisplay = mobileToggleElement ? getComputedStyle(mobileToggleElement).display : '';
+    const mobileExpandedDisplay = mobileToggleElement?.dataset?.expandedDisplay || 'flex';
 
     function applyState() {
-      if (!mobileQuery.matches || !isExpanded) {
+      const isMobile = mobileQuery.matches;
+
+      if (!isMobile) {
+        isExpanded = false;
+      }
+
+      if (!isMobile || !isExpanded) {
         if (closedText) {
-          closedText.style.display = previousClosedDisplay;
+          closedText.style.display = closedDefaultDisplay;
         }
         if (mobileToggleElement) {
-          mobileToggleElement.style.display = previousMobileDisplay;
+          mobileToggleElement.style.display = mobileDefaultDisplay;
         }
         return;
       }
 
       if (closedText) {
-        previousClosedDisplay = previousClosedDisplay || closedText.style.display;
         closedText.style.display = 'none';
       }
 
       if (mobileToggleElement) {
-        previousMobileDisplay = previousMobileDisplay || mobileToggleElement.style.display;
-        mobileToggleElement.style.display = 'flex';
+        mobileToggleElement.style.display = mobileExpandedDisplay;
       }
-    }
-
-    function resetStoredDisplays() {
-      previousClosedDisplay = '';
-      previousMobileDisplay = '';
     }
 
     const handleToggle = () => {
       if (!mobileQuery.matches) {
         isExpanded = false;
-        resetStoredDisplays();
         applyState();
         return;
       }
@@ -185,7 +184,6 @@
     const handleBreakpointChange = event => {
       if (!event.matches) {
         isExpanded = false;
-        resetStoredDisplays();
       }
       applyState();
     };
