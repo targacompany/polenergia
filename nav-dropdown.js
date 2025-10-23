@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const dropdowns = document.querySelectorAll('.top-nav-dropdown');
+  const HOVER_BREAKPOINT = 992;
+  const isHoverMode = () => window.innerWidth >= HOVER_BREAKPOINT;
 
   dropdowns.forEach(dropdown => {
     const content = dropdown.querySelector('.top-nav-dropdown-content');
@@ -7,11 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let hideTimeout;
     const baseTransition = 'transform 0.3s ease, opacity 0.4s ease';
+    let hoverEnabled = isHoverMode();
 
     const prepareHiddenState = () => {
+      clearTimeout(hideTimeout);
       content.style.display = 'none';
       content.style.opacity = '0';
       content.style.transform = 'translateY(50%)';
+      content.style.transition = baseTransition;
     };
 
     const showContent = () => {
@@ -36,21 +41,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isWithinContent = target => target && (content === target || content.contains(target));
 
-    dropdown.addEventListener('mouseenter', showContent);
+    dropdown.addEventListener('mouseenter', () => {
+      if (!hoverEnabled) return;
+      showContent();
+    });
 
     dropdown.addEventListener('mouseleave', event => {
+      if (!hoverEnabled) return;
       if (isWithinContent(event.relatedTarget)) return;
       hideContent();
     });
 
     content.addEventListener('mouseenter', () => {
+      if (!hoverEnabled) return;
       clearTimeout(hideTimeout);
       content.style.transition = `${baseTransition} 0.2s`;
       content.style.transform = 'translateY(0%)';
       content.style.opacity = '1';
     });
 
-    content.addEventListener('mouseleave', hideContent);
+    content.addEventListener('mouseleave', () => {
+      if (!hoverEnabled) return;
+      hideContent();
+    });
+
+    dropdown.addEventListener('click', event => {
+      if (hoverEnabled) return;
+      if (event.target.closest('.top-nav-dropdown-content')) return;
+      event.preventDefault();
+      const isVisible = content.style.display === 'flex' && content.style.opacity === '1';
+      if (isVisible) {
+        hideContent();
+      } else {
+        showContent();
+      }
+    });
+
+    const updateHoverState = () => {
+      const nextHoverState = isHoverMode();
+      if (nextHoverState === hoverEnabled) return;
+      hoverEnabled = nextHoverState;
+      prepareHiddenState();
+    };
+
+    window.addEventListener('resize', updateHoverState);
 
     prepareHiddenState();
   });
