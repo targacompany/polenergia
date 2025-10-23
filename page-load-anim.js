@@ -17,10 +17,6 @@
             opacity: 0;
         }
         
-        .navbar-banner {
-            background-color: #081c49;
-        }
-        
         /* Prevent flash of unstyled content */
         body {
             visibility: hidden;
@@ -74,7 +70,6 @@
         })
         .to('.navbar-banner', {
             delay: 0.4,
-            backgroundColor: '#03c389',
             duration: 0.2,
             ease: 'power4.in'
         }, '-=0.4') // Start at the same time as bar-content animation
