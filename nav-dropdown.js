@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const prepareHiddenState = () => {
       content.style.display = 'none';
       content.style.opacity = '0';
-      content.style.transform = 'translateY(-50%)';
+      content.style.transform = 'translateY(50%)';
     };
 
     const showContent = () => {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideContent = () => {
       clearTimeout(hideTimeout);
       content.style.transition = baseTransition;
-      content.style.transform = 'translateY(-10%)';
+      content.style.transform = 'translateY(50%)';
       content.style.opacity = '0';
       hideTimeout = setTimeout(() => {
         content.style.display = 'none';
