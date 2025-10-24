@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!content) return;
 
     let hideTimeout;
-    const baseTransition = 'transform 0.3s ease 0s, opacity 0.4s ease 0s';
-    const delayedTransition = 'transform 0.3s ease 0.2s, opacity 0.4s ease 0.2s';
+    const baseTransition = 'transform 0.3s ease 0s, opacity 0.3s ease 0s';
+    const delayedTransition = 'transform 0.3s ease 0.2s, opacity 0.3s ease 0.2s';
     let hoverEnabled = isHoverMode();
 
     const prepareHiddenState = () => {
