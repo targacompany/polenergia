@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentScrollY = window.scrollY;
 
     // Don't hide navbar if we're at the top of the page
-    if (currentScrollY < 100) {
+    if (currentScrollY < 50){
       showNavbar();
     } else {
       // Scrolling down - hide navbar
