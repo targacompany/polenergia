@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
   const dropdowns = document.querySelectorAll('.top-nav-dropdown');
   const HOVER_BREAKPOINT = 992;
@@ -8,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!content) return;
 
     let hideTimeout;
-    const baseTransition = 'transform 0.3s ease, opacity 0.4s ease';
+    const baseTransition = 'transform 0.3s ease 0s, opacity 0.4s ease 0s';
+    const delayedTransition = 'transform 0.3s ease 0.2s, opacity 0.4s ease 0.2s';
     let hoverEnabled = isHoverMode();
 
     const prepareHiddenState = () => {
@@ -19,10 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
       content.style.transition = baseTransition;
     };
 
-    const showContent = () => {
+    const showContent = (useDelay = true) => {
       clearTimeout(hideTimeout);
       content.style.display = 'flex';
-      content.style.transition = `${baseTransition} 0.2s`;
+      content.style.transition = useDelay ? delayedTransition : baseTransition;
       requestAnimationFrame(() => {
         content.style.transform = 'translateY(0%)';
         content.style.opacity = '1';
@@ -55,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     content.addEventListener('mouseenter', () => {
       if (!hoverEnabled) return;
       clearTimeout(hideTimeout);
-      content.style.transition = `${baseTransition} 0.2s`;
+      content.style.transition = delayedTransition;
       content.style.transform = 'translateY(0%)';
       content.style.opacity = '1';
     });
@@ -73,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isVisible) {
         hideContent();
       } else {
-        showContent();
+        showContent(false);
       }
     });
 
@@ -89,5 +91,3 @@ document.addEventListener('DOMContentLoaded', () => {
     prepareHiddenState();
   });
 });
-
-
