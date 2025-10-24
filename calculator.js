@@ -1,11 +1,11 @@
-  const INPUT_IDS = {
+const INPUT_IDS = {
     billInput: 'billInput',
     energyActivePrice: 'energyActivePrice',
     distributionPrice: 'distributionPrice',
     resalePrice: 'resalePrice',
     fixedCharges: 'fixedCharges',
     priceGrowth: 'priceGrowth',
-  dynamicPrice: 'dynamicPrice'
+    dynamicPrice: 'dynamicPrice'
   };
 
   const INSTALLATION_TABLE = [
@@ -86,13 +86,15 @@
   }
 
   function readInputs() {
+    const priceGrowthInput = readNumber(INPUT_IDS.priceGrowth);
+    const priceGrowth = priceGrowthInput > 1 ? priceGrowthInput / 100 : priceGrowthInput;
     return {
       billInput: readNumber(INPUT_IDS.billInput),
       energyActivePrice: readNumber(INPUT_IDS.energyActivePrice),
       distributionPrice: readNumber(INPUT_IDS.distributionPrice),
       resalePrice: readNumber(INPUT_IDS.resalePrice),
       fixedCharges: readNumber(INPUT_IDS.fixedCharges),
-      priceGrowth: readNumber(INPUT_IDS.priceGrowth),
+      priceGrowth,
       dynamicPrice: readBoolean(INPUT_IDS.dynamicPrice)
     };
   }
@@ -240,8 +242,9 @@
     const savings = baselineYearlyBill - yearlyBill;
 
     let paybackYear = null;
+    const paybackKey = inputs.dynamicPrice ? 'cumulativeWith' : 'cumulativeWithout';
     for (let i = 0; i < table.length; i += 1) {
-      if (table[i].cumulativeWith >= 0) {
+      if (table[i][paybackKey] >= 0) {
         paybackYear = table[i].year;
         break;
       }
@@ -278,7 +281,7 @@
 
   function updateOutputs(results) {
     setOutput('yearlyBill', results.yearlyBill, formatCurrency);
-    setOutput('resultBill', results.yearlyBill / 12, formatCurrency);
+    setOutput('resultBill', results.yearlyBill / 12, (value) => (Number.isFinite(value) ? value.toFixed(2) : ''));
     setOutput('savings', results.savings, formatCurrency);
     setOutput('recommendation-photovoltaics', results.recommendedPv, (value) => formatNumber(value, 2));
     setOutput('currentDemand', results.currentDemand, (value) => (Number.isFinite(value) ? value.toFixed(2) : ''));
@@ -293,7 +296,10 @@
 
   function dispatchResults(inputs, results) {
     const detail = {
-      inputs,
+      inputs: {
+        ...inputs,
+        currentDemand: results.currentDemand
+      },
       results: {
         yearlyBill: results.yearlyBill,
         savings: results.savings,
@@ -330,8 +336,16 @@
     });
   }
 
-  attachListeners();
-  recalculate();
+  const init = () => {
+    attachListeners();
+    recalculate();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
 
   window.polenergiaRecalculate = recalculate;
 
